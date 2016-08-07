@@ -1,7 +1,8 @@
 package grabber
 
 import (
-  "encoding/base64"
+  "crypto/md5"
+  "encoding/hex"
   "encoding/json"
   "net/http"
   "strconv"
@@ -95,5 +96,6 @@ func (g *Grabber) getPath(url string) string {
 }
 
 func (g *Grabber) urlToFileName(url string) string {
-  return base64.StdEncoding.EncodeToString([]byte(url))
+  sum := md5.Sum([]byte(url))
+  return hex.EncodeToString(sum[:])
 }
