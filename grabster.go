@@ -2,6 +2,7 @@ package grabster
 
 import (
   "net/http"
+  "sync"
   "./grabber"
 )
 
@@ -28,7 +29,9 @@ func HandleSync(iterator chan string, cachePath string) chan Response {
   return handler
 }
 
+// TODO Refactor, fix errors
 func HandleAll(iterator chan string, cachePath string) chan Response {
+  mutex := &sync.Mutex{}
   handler := make(chan Response)
   g := grabber.New(cachePath)
   go func() {
@@ -42,10 +45,12 @@ func HandleAll(iterator chan string, cachePath string) chan Response {
         r.Url = url
         r.Status, r.Headers, r.Body, r.Err = g.Get(url)
         handler <- r
+        mutex.Lock()
         sent++
         if (ready && received == sent) {
           close(handler)
         }
+        mutex.Unlock()
       }(url)
     }
     ready = true
