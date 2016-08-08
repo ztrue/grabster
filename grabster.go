@@ -1,26 +1,24 @@
 package grabster
 
 import (
-  "net/http"
   "sync"
+  "./client"
   "./grab"
 )
 
-type Response struct {
+type Result struct {
   Url string
-  Status int
-  Headers http.Header
-  Body []byte
+  Response *client.Response
   Err error
 }
 
-func HandleSync(iterator chan string, cachePath string) chan *Response {
-  handler := make(chan *Response)
+func HandleSync(iterator chan string, cachePath string) chan *Result {
+  handler := make(chan *Result)
   grabber := grab.New(cachePath)
   go func() {
     for url := range iterator {
       response, err := grabber.Get(url)
-      handler <- &Response{url, response.Status, response.Headers, response.Body, err}
+      handler <- &Result{url, response, err}
     }
     close(handler)
   }()
@@ -28,9 +26,9 @@ func HandleSync(iterator chan string, cachePath string) chan *Response {
 }
 
 // TODO Refactor, fix errors
-func HandleAll(iterator chan string, cachePath string) chan *Response {
+func HandleAll(iterator chan string, cachePath string) chan *Result {
   mutex := &sync.Mutex{}
-  handler := make(chan *Response)
+  handler := make(chan *Result)
   grabber := grab.New(cachePath)
   go func() {
     received := 0
@@ -40,7 +38,7 @@ func HandleAll(iterator chan string, cachePath string) chan *Response {
       received++
       go func(url string) {
         response, err := grabber.Get(url)
-        handler <- &Response{url, response.Status, response.Headers, response.Body, err}
+        handler <- &Result{url, response, err}
         mutex.Lock()
         sent++
         if (ready && received == sent) {
