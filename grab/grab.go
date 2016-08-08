@@ -1,4 +1,4 @@
-package grabber
+package grab
 
 import (
   "crypto/md5"

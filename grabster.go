@@ -3,7 +3,7 @@ package grabster
 import (
   "net/http"
   "sync"
-  "./grabber"
+  "./grab"
 )
 
 type Response struct {
@@ -16,10 +16,10 @@ type Response struct {
 
 func HandleSync(iterator chan string, cachePath string) chan *Response {
   handler := make(chan *Response)
-  g := grabber.New(cachePath)
+  grabber := grab.New(cachePath)
   go func() {
     for url := range iterator {
-      response, err := g.Get(url)
+      response, err := grabber.Get(url)
       handler <- &Response{url, response.Status, response.Headers, response.Body, err}
     }
     close(handler)
@@ -31,7 +31,7 @@ func HandleSync(iterator chan string, cachePath string) chan *Response {
 func HandleAll(iterator chan string, cachePath string) chan *Response {
   mutex := &sync.Mutex{}
   handler := make(chan *Response)
-  g := grabber.New(cachePath)
+  grabber := grab.New(cachePath)
   go func() {
     received := 0
     sent := 0
@@ -39,7 +39,7 @@ func HandleAll(iterator chan string, cachePath string) chan *Response {
     for url := range iterator {
       received++
       go func(url string) {
-        response, err := g.Get(url)
+        response, err := grabber.Get(url)
         handler <- &Response{url, response.Status, response.Headers, response.Body, err}
         mutex.Lock()
         sent++
