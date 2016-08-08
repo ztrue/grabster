@@ -6,7 +6,7 @@ import (
   "./grabber"
 )
 
-type Response struct{
+type Response struct {
   Url string
   Status int
   Headers http.Header
@@ -14,15 +14,13 @@ type Response struct{
   Err error
 }
 
-func HandleSync(iterator chan string, cachePath string) chan Response {
-  handler := make(chan Response)
+func HandleSync(iterator chan string, cachePath string) chan *Response {
+  handler := make(chan *Response)
   g := grabber.New(cachePath)
   go func() {
     for url := range iterator {
-      r := Response{}
-      r.Url = url
-      r.Status, r.Headers, r.Body, r.Err = g.Get(url)
-      handler <- r
+      response, err := g.Get(url)
+      handler <- &Response{url, response.Status, response.Headers, response.Body, err}
     }
     close(handler)
   }()
@@ -30,9 +28,9 @@ func HandleSync(iterator chan string, cachePath string) chan Response {
 }
 
 // TODO Refactor, fix errors
-func HandleAll(iterator chan string, cachePath string) chan Response {
+func HandleAll(iterator chan string, cachePath string) chan *Response {
   mutex := &sync.Mutex{}
-  handler := make(chan Response)
+  handler := make(chan *Response)
   g := grabber.New(cachePath)
   go func() {
     received := 0
@@ -41,10 +39,8 @@ func HandleAll(iterator chan string, cachePath string) chan Response {
     for url := range iterator {
       received++
       go func(url string) {
-        r := Response{}
-        r.Url = url
-        r.Status, r.Headers, r.Body, r.Err = g.Get(url)
-        handler <- r
+        response, err := g.Get(url)
+        handler <- &Response{url, response.Status, response.Headers, response.Body, err}
         mutex.Lock()
         sent++
         if (ready && received == sent) {

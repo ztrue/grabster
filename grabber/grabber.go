@@ -25,12 +25,12 @@ func New(cachePath string) *Grabber {
   return &Grabber{storage}
 }
 
-func (g *Grabber) Get(url string) (int, http.Header, []byte, error) {
+func (g *Grabber) Get(url string) (*client.Response, error) {
   fileName := g.getPath(url)
   if g.storage != nil && g.storage.Exists(fileName) {
-    status, headers, body, err := g.getFromCache(fileName)
+    response, err := g.getFromCache(fileName)
     if err == nil {
-      return status, headers, body, nil
+      return response, nil
     }
     // TODO Log errors if any
   }
@@ -45,45 +45,46 @@ func (g *Grabber) ClearCache(url string) error {
   return g.storage.Delete(g.getPath(url))
 }
 
-func (g *Grabber) getFromCache(fileName string) (int, http.Header, []byte, error) {
+func (g *Grabber) getFromCache(fileName string) (*client.Response, error) {
   data, readErr := g.storage.Read(fileName)
   if readErr != nil {
-    return 0, http.Header{}, []byte{}, readErr
+    return &client.Response{0, http.Header{}, []byte{}}, readErr
   }
   lines := strings.Split(string(data), "\n")
   if len(lines) < 3 {
-    return 0, http.Header{}, []byte{}, nil
+    // TODO Return error
+    return &client.Response{0, http.Header{}, []byte{}}, nil
   }
   status, convErr := strconv.Atoi(lines[0])
   if convErr != nil {
-    return 0, http.Header{}, []byte{}, convErr
+    return &client.Response{0, http.Header{}, []byte{}}, convErr
   }
   var headers http.Header
   jsonErr := json.Unmarshal([]byte(lines[1]), &headers)
   if jsonErr != nil {
-    return 0, http.Header{}, []byte{}, jsonErr
+    return &client.Response{0, http.Header{}, []byte{}}, jsonErr
   }
   body := []byte(strings.Join(lines[2:], "\n"))
-  return status, headers, body, nil
+  return &client.Response{status, headers, body}, nil
 }
 
-func (g *Grabber) loadActual(url string) (int, http.Header, []byte, error) {
-  status, headers, body, clientErr := client.Get(url)
+func (g *Grabber) loadActual(url string) (*client.Response, error) {
+  response, clientErr := client.Get(url)
   if g.storage != nil && clientErr == nil {
-    cacheErr := g.cacheActual(url, status, headers, body)
+    cacheErr := g.cacheActual(url, response)
     if cacheErr != nil {
       // TODO Log cache errors if any
     }
   }
-  return status, headers, body, clientErr
+  return response, clientErr
 }
 
-func (g *Grabber) cacheActual(url string, status int, headers http.Header, body []byte) error {
-  jsonHeaders, jsonErr := json.Marshal(headers)
+func (g *Grabber) cacheActual(url string, response *client.Response) error {
+  jsonHeaders, jsonErr := json.Marshal(response.Headers)
   if jsonErr != nil {
     return jsonErr
   }
-  parts := []string{strconv.Itoa(status), string(jsonHeaders), string(body)}
+  parts := []string{strconv.Itoa(response.Status), string(jsonHeaders), string(response.Body)}
   data := []byte(strings.Join(parts, "\n"))
   fileName := g.getPath(url)
   return g.storage.Write(fileName, data)

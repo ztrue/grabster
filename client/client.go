@@ -5,12 +5,18 @@ import (
   "net/http"
 )
 
-func Get(url string) (int, http.Header, []byte, error) {
+type Response struct {
+  Status int
+  Headers http.Header
+  Body []byte
+}
+
+func Get(url string) (*Response, error) {
   res, err := http.Get(url)
   if err != nil {
-    return 0, http.Header{}, []byte{}, err
+    return &Response{0, http.Header{}, []byte{}}, err
   }
   defer res.Body.Close()
   body, err := ioutil.ReadAll(res.Body)
-  return res.StatusCode, res.Header, body, err
+  return &Response{res.StatusCode, res.Header, body}, err
 }
