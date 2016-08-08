@@ -8,6 +8,9 @@ import (
 )
 
 func ConvertPath(path string, distSteps, distRange int) string {
+  if distRange <= 0 || distRange <= 0 {
+    return path
+  }
   delimiter := "/"
   chars := []rune(path)
   isDir := false
