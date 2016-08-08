@@ -1,53 +1,38 @@
 package grabster
 
 import (
-  "sync"
   "./client"
   "./grab"
 )
 
+type Parser func(*client.Response) (interface{}, error)
+
 type Result struct {
   Url string
-  Response *client.Response
+  Data interface{}
   Err error
 }
 
-func HandleSync(iterator chan string, cachePath string) chan *Result {
+func HandleSync(iterator chan string, parser Parser, cachePath string) chan *Result {
   handler := make(chan *Result)
   grabber := grab.New(cachePath)
   go func() {
     for url := range iterator {
-      response, err := grabber.Get(url)
-      handler <- &Result{url, response, err}
+      response, grabberErr := grabber.Get(url)
+      if grabberErr != nil {
+        handler <- &Result{url, nil, grabberErr}
+        continue
+      }
+      data, parserErr := parser(response)
+      if parserErr != nil {
+        handler <- &Result{url, nil, parserErr}
+        continue
+      }
+      handler <- &Result{url, data, nil}
     }
     close(handler)
   }()
   return handler
 }
 
-// TODO Refactor, fix errors
-func HandleAll(iterator chan string, cachePath string) chan *Result {
-  mutex := &sync.Mutex{}
-  handler := make(chan *Result)
-  grabber := grab.New(cachePath)
-  go func() {
-    received := 0
-    sent := 0
-    ready := false
-    for url := range iterator {
-      received++
-      go func(url string) {
-        response, err := grabber.Get(url)
-        handler <- &Result{url, response, err}
-        mutex.Lock()
-        sent++
-        if (ready && received == sent) {
-          close(handler)
-        }
-        mutex.Unlock()
-      }(url)
-    }
-    ready = true
-  }()
-  return handler
-}
+// TODO HandleAsync
