@@ -1,11 +1,9 @@
 package grabster
 
 import (
-  "./client"
   "./grab"
+  "./source"
 )
-
-type Parser func(*client.Response) (interface{}, error)
 
 type Result struct {
   Url string
@@ -13,12 +11,13 @@ type Result struct {
   Err error
 }
 
-func HandleSync(iterator chan string, parser Parser, cachePath string) chan *Result {
+func HandleSync(s source.Source, cachePath string) chan *Result {
   handler := make(chan *Result)
-  grabber := grab.New(cachePath)
+  grabber := grab.New(cachePath + "/" + s.Name())
+  parser := s.Parser()
   go func() {
     defer close(handler)
-    for url := range iterator {
+    for url := range s.Iterator() {
       data, err := process(grabber, url, parser)
       handler <- &Result{url, data, err}
     }
@@ -26,7 +25,7 @@ func HandleSync(iterator chan string, parser Parser, cachePath string) chan *Res
   return handler
 }
 
-func process(grabber *grab.Grabber, url string, parser Parser) (interface{}, error) {
+func process(grabber *grab.Grabber, url string, parser source.Parser) (interface{}, error) {
   response, grabberErr := grabber.Get(url)
   if grabberErr != nil {
     return nil, grabberErr
