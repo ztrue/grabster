@@ -1,25 +1,37 @@
 package dist
 
 import (
-  "hash/crc32"
   "fmt"
-  "path/filepath"
+  "hash/crc32"
   "strconv"
   "strings"
 )
 
 func ConvertPath(path string, distSteps, distRange int) string {
-  dir := filepath.Dir(path)
-  if dir != "" {
-    dir += "/"
+  delimiter := "/"
+  chars := []rune(path)
+  isDir := false
+  isNotEmpty := len(chars) > 0
+  if isNotEmpty {
+    lastChar := chars[len(chars) - 1]
+    isDir = string(lastChar) == delimiter
   }
-  fileName := filepath.Base(path)
-  parts := calculate(fileName, distSteps, distRange)
-  distPath := strings.Join(parts, "/")
-  if distPath != "" {
-    distPath += "/"
+  index := 1
+  if isDir {
+    index = 2
   }
-  return dir + distPath + fileName
+  rawParts := strings.Split(path, delimiter)
+  fileName := rawParts[len(rawParts) - index]
+  distParts := calculate(fileName, distSteps, distRange)
+  parts := rawParts[:len(rawParts) - index]
+  parts = append(parts, distParts...)
+  if isNotEmpty {
+    parts = append(parts, fileName)
+  }
+  if isDir {
+    parts = append(parts, "")
+  }
+  return strings.Join(parts, delimiter)
 }
 
 func calculate(fileName string, distSteps, distRange int) []string {
