@@ -29,11 +29,10 @@ func (g *Grabber) Get(url string) (int, http.Header, []byte, error) {
   fileName := g.getPath(url)
   if g.storage != nil && g.storage.Exists(fileName) {
     status, headers, body, err := g.getFromCache(fileName)
-    if err != nil {
-      // TODO Log errors if any
-    } else {
-      return status, headers, body, err
+    if err == nil {
+      return status, headers, body, nil
     }
+    // TODO Log errors if any
   }
   return g.loadActual(url)
 }
@@ -74,7 +73,6 @@ func (g *Grabber) loadActual(url string) (int, http.Header, []byte, error) {
     cacheErr := g.cacheActual(url, status, headers, body)
     if cacheErr != nil {
       // TODO Log cache errors if any
-      return 0, http.Header{}, []byte{}, cacheErr
     }
   }
   return status, headers, body, clientErr
