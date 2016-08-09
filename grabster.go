@@ -18,19 +18,17 @@ func HandleSync(s source.Source, cachePath string) chan *Result {
   go func() {
     defer close(handler)
     for url := range s.Iterator() {
-      data, err := process(grabber, url, parser)
+      data, err := func(url string) (interface{}, error) {
+        response, err := grabber.Get(url)
+        if err != nil {
+          return nil, err
+        }
+        return parser(response)
+      }(url)
       handler <- &Result{url, data, err}
     }
   }()
   return handler
-}
-
-func process(grabber *grab.Grabber, url string, parser source.Parser) (interface{}, error) {
-  response, grabberErr := grabber.Get(url)
-  if grabberErr != nil {
-    return nil, grabberErr
-  }
-  return parser(response)
 }
 
 // TODO HandleAsync
