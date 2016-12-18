@@ -51,20 +51,20 @@ func (g *Grabber) getFromCache(fileName string) (*client.Response, error) {
     return &client.Response{0, http.Header{}, []byte{}}, readErr
   }
   lines := strings.Split(string(data), "\n")
-  if len(lines) < 3 {
+  if len(lines) < 4 {
     // TODO Return error
     return &client.Response{0, http.Header{}, []byte{}}, nil
   }
-  status, convErr := strconv.Atoi(lines[0])
+  status, convErr := strconv.Atoi(lines[1])
   if convErr != nil {
     return &client.Response{0, http.Header{}, []byte{}}, convErr
   }
   var headers http.Header
-  jsonErr := json.Unmarshal([]byte(lines[1]), &headers)
+  jsonErr := json.Unmarshal([]byte(lines[2]), &headers)
   if jsonErr != nil {
     return &client.Response{0, http.Header{}, []byte{}}, jsonErr
   }
-  body := []byte(strings.Join(lines[2:], "\n"))
+  body := []byte(strings.Join(lines[3:], "\n"))
   return &client.Response{status, headers, body}, nil
 }
 
@@ -84,7 +84,12 @@ func (g *Grabber) cacheActual(url string, response *client.Response) error {
   if jsonErr != nil {
     return jsonErr
   }
-  parts := []string{strconv.Itoa(response.Status), string(jsonHeaders), string(response.Body)}
+  parts := []string{
+    url,
+    strconv.Itoa(response.Status),
+    string(jsonHeaders),
+    string(response.Body),
+  }
   data := []byte(strings.Join(parts, "\n"))
   fileName := g.getPath(url)
   return g.storage.Write(fileName, data)
