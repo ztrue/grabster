@@ -7,7 +7,7 @@ import (
 type Parser func(*client.Response) (interface{}, error)
 
 type Source interface {
-  Name() string
+  GetName() string
   Iterator() chan string
   Parser() Parser
 }

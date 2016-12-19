@@ -16,7 +16,7 @@ type Result struct {
 
 func HandleSync(s source.Source, cachePath string, timeout time.Duration) chan *Result {
   handler := make(chan *Result)
-  grabber := grab.New(cachePath + "/" + s.Name())
+  grabber := grab.New(cachePath + "/" + s.GetName())
   parser := s.Parser()
   go func() {
     defer close(handler)
@@ -38,7 +38,7 @@ func HandleSync(s source.Source, cachePath string, timeout time.Duration) chan *
 
 func HandleAsync(s source.Source, cachePath string, timeout time.Duration) chan *Result {
   handler := make(chan *Result)
-  grabber := grab.New(cachePath + "/" + s.Name())
+  grabber := grab.New(cachePath + "/" + s.GetName())
   parser := s.Parser()
   go func() {
     var wg sync.WaitGroup
