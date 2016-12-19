@@ -21,6 +21,7 @@ func New(cachePath string) *Grabber {
     storage = filestorage.New()
     storage.BasePath = cachePath
     storage.IsDist = true
+    storage.Compressed = true
   }
   return &Grabber{storage}
 }
