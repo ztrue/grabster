@@ -14,13 +14,14 @@ type Result struct {
   Cached bool
 }
 
-func HandleSync(s source.Source, cachePath string) chan *Result {
+func HandleSync(s source.Source, cachePath string, timeout time.Duration) chan *Result {
   handler := make(chan *Result)
   grabber := grab.New(cachePath + "/" + s.Name())
   parser := s.Parser()
   go func() {
     defer close(handler)
     for url := range s.Iterator() {
+      time.Sleep(timeout)
       data, cached, err := func(url string) (interface{}, bool, error) {
         response, cached, err := grabber.Get(url)
         if err != nil {
