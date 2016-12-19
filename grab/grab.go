@@ -25,16 +25,17 @@ func New(cachePath string) *Grabber {
   return &Grabber{storage}
 }
 
-func (g *Grabber) Get(url string) (*client.Response, error) {
+func (g *Grabber) Get(url string) (*client.Response, bool, error) {
   fileName := g.getPath(url)
   if g.storage != nil && g.storage.Exists(fileName) {
     response, err := g.getFromCache(fileName)
     if err == nil {
-      return response, nil
+      return response, true, nil
     }
     // TODO Log errors if any
   }
-  return g.loadActual(url)
+  response, err := g.loadActual(url)
+  return response, false, err
 }
 
 func (g *Grabber) ClearCache(url string) error {
