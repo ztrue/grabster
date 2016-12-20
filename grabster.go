@@ -21,7 +21,6 @@ func HandleSync(s source.Source, cachePath string, timeout time.Duration) chan *
   go func() {
     defer close(handler)
     for url := range s.Iterator() {
-      time.Sleep(timeout)
       data, cached, err := func(url string) (interface{}, bool, error) {
         response, cached, err := grabber.Get(url)
         if err != nil {
@@ -31,6 +30,7 @@ func HandleSync(s source.Source, cachePath string, timeout time.Duration) chan *
         return data, cached, err
       }(url)
       handler <- &Result{url, data, err, cached}
+      time.Sleep(timeout)
     }
   }()
   return handler
@@ -44,7 +44,6 @@ func HandleAsync(s source.Source, cachePath string, timeout time.Duration) chan 
     var wg sync.WaitGroup
     for url := range s.Iterator() {
       wg.Add(1)
-      time.Sleep(timeout)
       go func(url string) {
         defer wg.Done()
         data, cached, err := func(url string) (interface{}, bool, error) {
@@ -57,6 +56,7 @@ func HandleAsync(s source.Source, cachePath string, timeout time.Duration) chan 
         }(url)
         handler <- &Result{url, data, err, cached}
       }(url)
+      time.Sleep(timeout)
     }
     go func() {
       wg.Wait()
