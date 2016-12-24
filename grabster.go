@@ -14,12 +14,14 @@ type Result struct {
   Cached bool
 }
 
+type Handler func(s source.Source, cachePath string, timeout time.Duration) chan *Result
+
 func HandleSync(s source.Source, cachePath string, timeout time.Duration) chan *Result {
-  handler := make(chan *Result)
+  results := make(chan *Result)
   grabber := grab.New(cachePath + "/" + s.GetName())
   parser := s.Parser()
   go func() {
-    defer close(handler)
+    defer close(results)
     for url := range s.Iterator() {
       data, cached, err := func(url string) (interface{}, bool, error) {
         response, cached, err := grabber.Get(url)
@@ -29,15 +31,15 @@ func HandleSync(s source.Source, cachePath string, timeout time.Duration) chan *
         data, err := parser(response)
         return data, cached, err
       }(url)
-      handler <- &Result{url, data, err, cached}
+      results <- &Result{url, data, err, cached}
       time.Sleep(timeout)
     }
   }()
-  return handler
+  return results
 }
 
 func HandleAsync(s source.Source, cachePath string, timeout time.Duration) chan *Result {
-  handler := make(chan *Result)
+  results := make(chan *Result)
   grabber := grab.New(cachePath + "/" + s.GetName())
   parser := s.Parser()
   go func() {
@@ -54,14 +56,14 @@ func HandleAsync(s source.Source, cachePath string, timeout time.Duration) chan 
           data, err := parser(response)
           return data, cached, err
         }(url)
-        handler <- &Result{url, data, err, cached}
+        results <- &Result{url, data, err, cached}
       }(url)
       time.Sleep(timeout)
     }
     go func() {
       wg.Wait()
-      close(handler)
+      close(results)
     }()
   }()
-  return handler
+  return results
 }
