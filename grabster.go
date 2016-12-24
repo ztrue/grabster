@@ -28,7 +28,7 @@ func HandleSync(s source.Source, cachePath string, timeout time.Duration) chan *
         if err != nil {
           return response, cached, err
         }
-        data, err := parser(response)
+        data, err := parser(url, response)
         return data, cached, err
       }(url)
       results <- &Result{url, data, err, cached}
@@ -53,7 +53,7 @@ func HandleAsync(s source.Source, cachePath string, timeout time.Duration) chan 
           if err != nil {
             return response, cached, err
           }
-          data, err := parser(response)
+          data, err := parser(url, response)
           return data, cached, err
         }(url)
         results <- &Result{url, data, err, cached}

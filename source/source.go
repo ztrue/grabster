@@ -4,7 +4,7 @@ import (
   "../client"
 )
 
-type Parser func(*client.Response) (interface{}, error)
+type Parser func(string, *client.Response) (interface{}, error)
 
 type Source interface {
   GetName() string
