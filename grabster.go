@@ -3,8 +3,8 @@ package grabster
 import (
   "sync"
   "time"
-  "./grab"
-  "./source"
+  "github.com/ztrue/grabster/grab"
+  "github.com/ztrue/grabster/source"
 )
 
 type Result struct {

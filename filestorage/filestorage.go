@@ -2,8 +2,8 @@ package filestorage
 
 import (
   "path/filepath"
-  "./dist"
-  "./fs"
+  "github.com/ztrue/grabster/filestorage/dist"
+  "github.com/ztrue/grabster/filestorage/fs"
   "github.com/mholt/archiver"
 )
 

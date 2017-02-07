@@ -7,8 +7,8 @@ import (
   "net/http"
   "strconv"
   "strings"
-  "../client"
-  "../filestorage"
+  "github.com/ztrue/grabster/client"
+  "github.com/ztrue/grabster/filestorage"
 )
 
 type Grabber struct {

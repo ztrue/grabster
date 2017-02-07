@@ -1,7 +1,7 @@
 package source
 
 import (
-  "../client"
+  "github.com/ztrue/grabster/client"
 )
 
 type Parser func(string, *client.Response) (interface{}, error)
